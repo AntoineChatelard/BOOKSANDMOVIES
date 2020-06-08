@@ -1,3 +1,34 @@
+-- Requête note moyenne d'un film
+-- On selectionne la moyenne des 3 notes de chaque film que l'on additionne puis divise par 3 pour obtenir la note moyenne
+SELECT NF.ID_FILM, F.TITRE, 
+	ROUND((AVG(NF.NOTE_JEUACTEUR) + AVG(NF.NOTE_QUALITEAV) + AVG(NF.NOTE_SCENARIO)) / 3, 2) AS 'NOTE MOYENNE' 
+FROM NOTEFILM NF, FILM F  
+WHERE NF.ID_FILM = F.ID_FILM 
+GROUP BY NF.ID_FILM, F.TITRE
+
+-- Requête note moyenne d'un livre
+-- IDEM pour les livres avec les notes correspondantes
+SELECT NL.ID_LIVRE, L.TITRE, 
+	ROUND((AVG(NL.NOTE_PERSONNAGE) + AVG(NL.NOTE_QUALITEEC) + AVG(NL.NOTE_SCENARIO)) / 3, 2) AS 'NOTE MOYENNE' 
+FROM NOTELIVRE NL, LIVRE L  
+WHERE NL.ID_LIVRE = L.ID_LIVRE 
+GROUP BY NL.ID_LIVRE, L.TITRE
+
+-- Requête nombre de note d'un film
+-- On selectionne le nombre de lignes présentes dans la table NOTEFILM pointant vers chaque film
+SELECT NF.ID_FILM, F.TITRE, COUNT(NF.ID_FILM) AS 'NOMBRE DE NOTES'
+FROM NOTEFILM NF 
+	INNER JOIN FILM F ON NF.ID_FILM = F.ID_FILM 
+GROUP BY NF.ID_FILM, F.TITRE
+
+
+-- Requête nombre de note d'un livre
+-- IDEM pour les livres
+SELECT NL.ID_LIVRE, L.TITRE, COUNT(NL.ID_LIVRE) AS 'NOMBRE DE NOTES'
+FROM NOTELIVRE NL 
+	INNER JOIN LIVRE L ON NL.ID_LIVRE = L.ID_LIVRE 
+GROUP BY NL.ID_LIVRE, L.TITRE
+
 -- Requête de selection du nombre d'utilisateur :
 -- On selectionne le nombre d'utilisateur grâce à un count sur la table UTILISATEUR
 SELECT COUNT(*) AS 'NOMBRE D''UTILISATEURS TOTAL'
