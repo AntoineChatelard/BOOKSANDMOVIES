@@ -1,4 +1,4 @@
--- Requête note moyenne d'un film
+-- Requête note moyenne des films
 -- On selectionne la moyenne des 3 notes de chaque film que l'on additionne puis divise par 3 pour obtenir la note moyenne
 SELECT NF.ID_FILM, F.TITRE, 
 	ROUND((AVG(NF.NOTE_JEUACTEUR) + AVG(NF.NOTE_QUALITEAV) + AVG(NF.NOTE_SCENARIO)) / 3, 2) AS 'NOTE MOYENNE' 
@@ -6,7 +6,7 @@ FROM NOTEFILM NF, FILM F
 WHERE NF.ID_FILM = F.ID_FILM 
 GROUP BY NF.ID_FILM, F.TITRE
 
--- Requête note moyenne d'un livre
+-- Requête note moyenne des livres
 -- IDEM pour les livres avec les notes correspondantes
 SELECT NL.ID_LIVRE, L.TITRE, 
 	ROUND((AVG(NL.NOTE_PERSONNAGE) + AVG(NL.NOTE_QUALITEEC) + AVG(NL.NOTE_SCENARIO)) / 3, 2) AS 'NOTE MOYENNE' 

@@ -1,0 +1,32 @@
+-- Chaque procédure stockée doit être ajoutée une à une 
+
+-- Fonction retournant la note moyenne d'un film selectionné par son ID
+DROP FUNCTION IF EXISTS getNoteMoyenneFilm
+GO
+
+CREATE OR ALTER FUNCTION getNoteMoyenneFilm (@ID_FILM int)
+RETURNS FLOAT
+BEGIN
+	DECLARE @note FLOAT
+	SELECT @note = ROUND((AVG(NF.NOTE_JEUACTEUR) + AVG(NF.NOTE_QUALITEAV) + AVG(NF.NOTE_SCENARIO)) / 3, 2) 
+	FROM NOTEFILM NF, FILM F  
+	WHERE NF.ID_FILM = F.ID_FILM AND F.ID_FILM = @ID_FILM
+	GROUP BY NF.ID_FILM, F.TITRE
+	RETURN @note
+END
+
+
+-- Fonction retournant la note moyenne d'un livre selectionné par son ID
+DROP FUNCTION IF EXISTS getNoteMoyenneLivre
+GO
+
+CREATE OR ALTER FUNCTION getNoteMoyenneLivre (@ID_LIVRE int)
+RETURNS FLOAT
+BEGIN
+	DECLARE @note FLOAT
+	SELECT @note = ROUND((AVG(NL.NOTE_PERSONNAGE) + AVG(NL.NOTE_QUALITEEC) + AVG(NL.NOTE_SCENARIO)) / 3, 2)
+	FROM NOTELIVRE NL, LIVRE L  
+	WHERE NL.ID_LIVRE = L.ID_LIVRE AND L.ID_LIVRE = @ID_LIVRE
+	GROUP BY NL.ID_LIVRE, L.TITRE
+	RETURN @note
+END
