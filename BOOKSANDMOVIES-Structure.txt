@@ -1,6 +1,4 @@
 -- Création de la base de données et placement dans celle-ci (peut être supprimé si la base existe déjà)
-DROP DATABASE IF EXISTS BOOKSANDMOVIES;
-GO
 CREATE DATABASE BOOKSANDMOVIES;
 GO
 USE BOOKSANDMOVIES;
