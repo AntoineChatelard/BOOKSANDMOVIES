@@ -1,37 +1,23 @@
 ﻿-- Se positionner dans la table ou l'on souhaite crypter des données --
-USE BOOKSANDMOVIES
+USE BOOKSANDMOVIES;
 GO
 
 -- Création d'une master key, et de sa protection par mot de passe, la master key permet de chiffrer toute les clés ou certificats qui seront crées dans la base --
-CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'BOOKSANDMOVIES123:)'
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'BOOKSANDMOVIES123:)';
 GO
 
 -- Création d'un certificat (clé asymétrique avec des options), avec un sujet --
-CREATE CERTIFICATE BOOKSANDMOVIESCERTIFICATE WITH SUBJECT ='Master key certificate of the BOOKSANDMOVIES database'
+CREATE CERTIFICATE BOOKSANDMOVIESCERTIFICATE WITH SUBJECT ='Master key certificate of the BOOKSANDMOVIES database';
 GO
 
 -- Sauvegarder le certificat --
--- Choisir si nécessaire le chemin de sauvegarde
+-- Choisir si nécessaire le chemin de sauvegarde (le répertoire de base est "C:/temp")
+/*
 BACKUP CERTIFICATE BOOKSANDMOVIESCERTIFICATE to FILE ='c:\temp\BOOKSANDMOVIESCERTIFICATE.cert'
 WITH PRIVATE KEY (FILE = 'c:\temp\BOOKSANDMOVIESCERTIFICATE',
-ENCRYPTION BY PASSWORD = 'BOOKSANDMOVIES123:)')
+ENCRYPTION BY PASSWORD = 'BOOKSANDMOVIES123:)');
 GO
-
-
-
--- Créer un chiffrement spécifique pour le champ mot de passe de la BDD --
-ALTER TABLE UTILISATEUR
-ADD MOTDEPASSE_CRYPT varbinary(MAX) NULL
-GO
-
--- Ouvre la clé symétrique pour l'utiliser
-UPDATE UTILISATEUR
-SET MOTDEPASSE_CRYPT = EncryptByCert (CERT_ID('BOOKSANDMOVIESCERTIFICATE'), MOTDEPASSE)
-FROM dbo.UTILISATEUR;
-GO
-
-EXEC sp_rename 'UTILISATEUR.MOTDEPASSE', 'MOTDEPASSE_TEMP';  
-GO
+*/
 
 -- Créer la clé de chiffrement de la BDD --
 CREATE DATABASE ENCRYPTION KEY
@@ -50,18 +36,25 @@ CREATE SYMMETRIC KEY BAMKEY
  ENCRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE;
 GO
 
-
-
 -- Créer un chiffrement spécifique pour le champ mot de passe de la BDD --
--- Ouvre la clé symétrique pour l'utiliser
-OPEN SYMMETRIC KEY BAMKEY
-DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE;
+ALTER TABLE UTILISATEUR
+ADD MOTDEPASSE_CRYPT varbinary(MAX) NULL
 GO
+
+-- Ouvre la clé symétrique pour l'utiliser
+OPEN SYMMETRIC KEY BAMKEY DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE
+GO
+
 UPDATE UTILISATEUR
-SET MOTDEPASSE = EncryptByKey(Key_GUID('BAMKEY'),MOTDEPASSE)
+SET MOTDEPASSE_CRYPT = EncryptByCert (CERT_ID('BOOKSANDMOVIESCERTIFICATE'), MOTDEPASSE)
 FROM dbo.UTILISATEUR;
 GO
 
--- Ferme la clé symmétrique -- 
-CLOSE SYMMETRIC KEY BAMKEY;
+CLOSE SYMMETRIC KEY BAMKEY
+GO
+
+UPDATE UTILISATEUR SET MOTDEPASSE = ''
+GO
+
+EXEC sp_rename 'UTILISATEUR.MOTDEPASSE', 'MOTDEPASSE_TEMP';  
 GO
