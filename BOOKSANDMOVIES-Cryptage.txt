@@ -1,8 +1,38 @@
-﻿-- Se positionner dans la table ou l'on souhaite crypter des données --
+﻿-- CHIFFREMENT DE LA BASE DE DONNÉES :
+-- On se place dans la table master afin de créer la clé master et le certificat du serveur :
+USE master;
+GO
+
+-- Création d'une master key, et de sa protection par mot de passe, la master key permet de chiffrer toute les clés ou certificats qui seront crées dans les bases --
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Server123:)';
+GO
+
+-- Création d'un certificat (clé asymétrique avec des options), avec un sujet --
+CREATE CERTIFICATE SERVERCERTIFICATE WITH SUBJECT ='Master key certificate of the server';
+GO
+
+-- On se place ensuite dans la base BOOKSANDMOVIES afin d'ajouter un clé de chiffrement de base de données elle même chiffrée par le certificat du serveur :
 USE BOOKSANDMOVIES;
 GO
 
--- Création d'une master key, et de sa protection par mot de passe, la master key permet de chiffrer toute les clés ou certificats qui seront crées dans la base --
+-- Création de la clé de chiffrement de la BDD --
+CREATE DATABASE ENCRYPTION KEY
+WITH ALGORITHM = AES_256
+ENCRYPTION BY SERVER CERTIFICATE SERVERCERTIFICATE;
+GO
+
+-- Activation du chiffrement de la base de données--
+ALTER DATABASE BOOKSANDMOVIES
+SET ENCRYPTION ON;
+GO
+
+
+-- CHIFFREMENT PARTIEL DE LA BASE DE DONNÉES :
+-- On se place directement dans BOOKSANDMOVIES afin de créer un clé de chiffrement master :
+USE BOOKSANDMOVIES;
+GO
+
+-- Création d'une master key, et de sa protection par mot de passe, la master key permet de chiffrer toute les clés ou certificats qui seront crées dans les bases --
 CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'BOOKSANDMOVIES123:)';
 GO
 
@@ -10,51 +40,76 @@ GO
 CREATE CERTIFICATE BOOKSANDMOVIESCERTIFICATE WITH SUBJECT ='Master key certificate of the BOOKSANDMOVIES database';
 GO
 
--- Sauvegarder le certificat --
+-- Sauvegarde du certificat --
 -- Choisir si nécessaire le chemin de sauvegarde (le répertoire de base est "C:/temp")
 /*
 BACKUP CERTIFICATE BOOKSANDMOVIESCERTIFICATE to FILE ='c:\temp\BOOKSANDMOVIESCERTIFICATE.cert'
 WITH PRIVATE KEY (FILE = 'c:\temp\BOOKSANDMOVIESCERTIFICATE',
 ENCRYPTION BY PASSWORD = 'BOOKSANDMOVIES123:)');
-GO
 */
 
--- Créer la clé de chiffrement de la BDD --
-CREATE DATABASE ENCRYPTION KEY
-WITH ALGORITHM = AES_256
-ENCRYPTION BY SERVER CERTIFICATE BOOKSANDMOVIESCERTIFICATE;
-GO
-
--- Activer le chiffrement --
-ALTER DATABASE BOOKSANDMOVIES
-SET ENCRYPTION ON;
-GO
-
--- Créer clé symétrique protégée par un certificat --
-CREATE SYMMETRIC KEY BAMKEY
- WITH ALGORITHM = AES_128 
+-- Création de la clé symétrique protégée par un certificat que l'on utilisera pour chiffrer les données --
+CREATE SYMMETRIC KEY BAMKEY192
+ WITH ALGORITHM = AES_192
  ENCRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE;
-GO
 
--- Créer un chiffrement spécifique pour le champ mot de passe de la BDD --
+CREATE SYMMETRIC KEY BAMKEY256
+ WITH ALGORITHM = AES_256
+ ENCRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE;
+ GO
+
+-- Création des champs chiffrées : --
+-- IL EST NÉCESSAIRE QUE LA TABLE SOIT VIDE AFIN D'AJOUTER LES CHAMPS :
 ALTER TABLE UTILISATEUR
-ADD MOTDEPASSE_CRYPT varbinary(MAX) NULL
+ADD NOM_CRYPT varbinary(MAX) NOT NULL
 GO
 
--- Ouvre la clé symétrique pour l'utiliser
-OPEN SYMMETRIC KEY BAMKEY DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE
+ALTER TABLE UTILISATEUR
+ADD PRENOM_CRYPT varbinary(MAX) NOT NULL
 GO
 
-UPDATE UTILISATEUR
-SET MOTDEPASSE_CRYPT = EncryptByCert (CERT_ID('BOOKSANDMOVIESCERTIFICATE'), MOTDEPASSE)
-FROM dbo.UTILISATEUR;
+ALTER TABLE UTILISATEUR
+ADD ADRESSEMAIL_CRYPT varbinary(MAX) NOT NULL
 GO
 
-CLOSE SYMMETRIC KEY BAMKEY
+ALTER TABLE UTILISATEUR
+ADD MOTDEPASSE_CRYPT varbinary(MAX) NOT NULL
 GO
 
-UPDATE UTILISATEUR SET MOTDEPASSE = ''
+ALTER TABLE UTILISATEUR
+ADD DATENAISSANCE_CRYPT varbinary(MAX) NOT NULL
 GO
 
-EXEC sp_rename 'UTILISATEUR.MOTDEPASSE', 'MOTDEPASSE_TEMP';  
+-- Ouverture de la clé symétrique afin de crypter les champs voulus :
+OPEN SYMMETRIC KEY BAMKEY256 DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE
+	UPDATE UTILISATEUR
+	SET MOTDEPASSE_CRYPT = EncryptByKey(Key_GUID('BAMKEY256'), MOTDEPASSE)
+	FROM dbo.UTILISATEUR;
+CLOSE SYMMETRIC KEY BAMKEY256
+GO
+
+ALTER TABLE UTILISATEUR DROP COLUMN MOTDEPASSE;
+GO
+
+OPEN SYMMETRIC KEY BAMKEY192 DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE
+	UPDATE UTILISATEUR
+	SET NOM_CRYPT = EncryptByKey(Key_GUID('BAMKEY192'), NOM)
+	FROM dbo.UTILISATEUR;
+	UPDATE UTILISATEUR
+	SET PRENOM_CRYPT = EncryptByKey(Key_GUID('BAMKEY192'), PRENOM)
+	FROM dbo.UTILISATEUR;
+	UPDATE UTILISATEUR
+	SET ADRESSEMAIL_CRYPT = EncryptByKey(Key_GUID('BAMKEY192'), ADRESSEMAIL)
+	FROM dbo.UTILISATEUR;
+	UPDATE UTILISATEUR
+	SET DATENAISSANCE_CRYPT = EncryptByKey(Key_GUID('BAMKEY192'), CONVERT(varchar, DATENAISSANCE))
+	FROM dbo.UTILISATEUR;
+CLOSE SYMMETRIC KEY BAMKEY192
+GO
+
+ALTER TABLE UTILISATEUR DROP COLUMN NOM;
+ALTER TABLE UTILISATEUR DROP COLUMN PRENOM;
+ALTER TABLE dbo.UTILISATEUR DROP CONSTRAINT UC_ADRESSEMAIL_UTILISATEUR;
+ALTER TABLE UTILISATEUR DROP COLUMN ADRESSEMAIL;
+ALTER TABLE UTILISATEUR DROP COLUMN DATENAISSANCE;
 GO
