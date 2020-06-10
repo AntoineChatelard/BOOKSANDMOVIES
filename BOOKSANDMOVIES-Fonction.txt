@@ -15,7 +15,6 @@ BEGIN
 	RETURN @note
 END
 
-
 -- Fonction retournant la note moyenne d'un livre selectionné par son ID
 DROP FUNCTION IF EXISTS getNoteMoyenneLivre
 GO
@@ -30,3 +29,37 @@ BEGIN
 	GROUP BY NL.ID_LIVRE, L.TITRE
 	RETURN @note
 END
+
+-- Fonction retournant le nombre de note d'un livre selectionné par son ID
+DROP FUNCTION IF EXISTS getNombreNoteLivre
+GO
+
+CREATE OR ALTER FUNCTION getNombreNoteLivre (@ID_LIVRE int)
+RETURNS FLOAT
+BEGIN
+	DECLARE @Nbnote FLOAT
+	SELECT @Nbnote = COUNT(NL.ID_LIVRE)
+	FROM NOTELIVRE NL 
+	INNER JOIN LIVRE L ON NL.ID_LIVRE = L.ID_LIVRE 
+	WHERE NL.ID_LIVRE = @ID_LIVRE
+	GROUP BY NL.ID_LIVRE, L.TITRE
+	RETURN @Nbnote
+END
+
+-- Fonction retournant le nombre de note d'un film selectionné par son ID
+DROP FUNCTION IF EXISTS getNombreNoteFilm
+GO
+
+CREATE OR ALTER FUNCTION getNombreNoteFilm (@ID_FILM int)
+RETURNS FLOAT
+BEGIN
+	DECLARE @Nbnote FLOAT
+	SELECT @Nbnote = COUNT(NF.ID_FILM)
+	FROM NOTEFILM NF 
+	INNER JOIN FILM F ON NF.ID_FILM = F.ID_FILM 
+	WHERE NF.ID_FILM = @ID_FILM
+	GROUP BY NF.ID_FILM, F.TITRE
+	RETURN @Nbnote
+END
+
+
