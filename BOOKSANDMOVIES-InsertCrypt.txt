@@ -1,4 +1,4 @@
--- Insert crypté manuellement
+﻿-- Insert crypté "manuellement"
 OPEN SYMMETRIC KEY BAMKEY192 DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE
 OPEN SYMMETRIC KEY BAMKEY256 DECRYPTION BY CERTIFICATE BOOKSANDMOVIESCERTIFICATE
 
@@ -9,5 +9,5 @@ VALUES
 CLOSE SYMMETRIC KEY BAMKEY256
 CLOSE SYMMETRIC KEY BAMKEY192
 
--- Insert crypté grâce à un procédure stockée (nécessite l'execution du fichier BOOKSANDMOVIES-ProcStockee.txt)
+-- Insert crypté grâce à une procédure stockée (nécessite l'execution du fichier BOOKSANDMOVIES-ProcStockee.txt)
 exec dbo.insertUtilisateur 'POITOU','Stéphane','Steph.pouitou@yahoo.fr','keval0611','08/10/1976';
